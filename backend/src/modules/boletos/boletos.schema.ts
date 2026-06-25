@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const boletoSchema = z.object({
+const boletoBase = z.object({
   tipo: z.enum(["PAGAR", "RECEBER"]),
   clienteId: z.string().cuid().optional().nullable(),
   descricao: z.string().optional(),
@@ -10,12 +10,14 @@ export const boletoSchema = z.object({
   linhaDigitavel: z.string().optional(),
   nossoNumero: z.string().optional(),
   observacoes: z.string().optional(),
-}).refine(
+});
+
+export const boletoSchema = boletoBase.refine(
   (d) => !(d.tipo === "RECEBER" && !d.clienteId),
   { message: "Informe o cliente para boletos a RECEBER", path: ["clienteId"] }
 );
 
-export const boletoUpdateSchema = boletoSchema.partial().omit({ tipo: true });
+export const boletoUpdateSchema = boletoBase.partial().omit({ tipo: true });
 
 export const filtrosSchema = z.object({
   tipo: z.enum(["PAGAR", "RECEBER"]).optional(),

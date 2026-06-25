@@ -60,14 +60,14 @@ async function processarLembretes() {
     const mensagem = ehPagar
       ? montarMensagemPagar({
           descricao: boleto.descricao,
-          valor: boleto.valor,
+          valor: boleto.valor.toNumber(),
           dataVencimento: boleto.dataVencimento,
           linhaDigitavel: boleto.linhaDigitavel,
         })
       : montarMensagemReceber({
           nomeCliente: boleto.cliente!.nome,
           descricao: boleto.descricao,
-          valor: boleto.valor,
+          valor: boleto.valor.toNumber(),
           dataVencimento: boleto.dataVencimento,
           linhaDigitavel: boleto.linhaDigitavel,
         });
