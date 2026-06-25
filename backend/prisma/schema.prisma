@@ -1,0 +1,150 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── TENANT ──────────────────────────────────────────────────────────────────
+
+model Empresa {
+  id           String   @id @default(cuid())
+  nome         String
+  cnpj         String?  @unique
+  email        String   @unique
+  senhaHash    String
+  plano        Plano    @default(FREE)
+  ativo        Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  clientes     Cliente[]
+  boletos      Boleto[]
+  configuracao ConfiguracaoWpp?
+
+  @@map("empresas")
+}
+
+enum Plano {
+  FREE
+  BASICO
+  PRO
+}
+
+// ─── WHATSAPP CONFIG ─────────────────────────────────────────────────────────
+
+model ConfiguracaoWpp {
+  id                 String   @id @default(cuid())
+  empresaId          String   @unique
+  evolutionApiUrl    String
+  evolutionApiKey    String
+  instanceName       String
+  telefoneFinanceiro String   // número fixo que recebe alertas de boletos a PAGAR
+  ativo              Boolean  @default(true)
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("configuracoes_wpp")
+}
+
+// ─── CLIENTES ────────────────────────────────────────────────────────────────
+
+model Cliente {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  cpfCnpj      String?
+  email        String?
+  telefone     String   // WhatsApp para lembretes de boletos a RECEBER
+  ativo        Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  boletos Boleto[]
+
+  @@unique([empresaId, cpfCnpj])
+  @@index([empresaId])
+  @@map("clientes")
+}
+
+// ─── BOLETOS ─────────────────────────────────────────────────────────────────
+
+model Boleto {
+  id              String       @id @default(cuid())
+  empresaId       String
+  clienteId       String?      // null quando tipo = PAGAR
+  tipo            TipoBoleto
+  status          StatusBoleto @default(PENDENTE)
+  descricao       String?
+  valor           Decimal      @db.Decimal(10, 2)
+  dataVencimento  DateTime
+  dataPagamento   DateTime?
+  numeroDocumento String?
+  linhaDigitavel  String?      @db.Text
+  nossoNumero     String?
+  observacoes     String?      @db.Text
+  criadoEm       DateTime     @default(now())
+  atualizadoEm   DateTime     @updatedAt
+
+  empresa      Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  cliente      Cliente?      @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  notificacoes Notificacao[]
+
+  @@index([empresaId, dataVencimento])
+  @@index([empresaId, status])
+  @@index([clienteId])
+  @@map("boletos")
+}
+
+enum TipoBoleto {
+  PAGAR
+  RECEBER
+}
+
+enum StatusBoleto {
+  PENDENTE
+  PAGO
+  VENCIDO
+  CANCELADO
+}
+
+// ─── NOTIFICAÇÕES ────────────────────────────────────────────────────────────
+
+model Notificacao {
+  id           String            @id @default(cuid())
+  boletoId     String
+  tipo         TipoNotificacao
+  status       StatusNotificacao @default(PENDENTE)
+  telefone     String
+  mensagem     String            @db.Text
+  tentativas   Int               @default(0)
+  enviadoEm   DateTime?
+  erro         String?           @db.Text
+  criadoEm    DateTime          @default(now())
+  atualizadoEm DateTime         @updatedAt
+
+  boleto Boleto @relation(fields: [boletoId], references: [id], onDelete: Cascade)
+
+  @@index([boletoId])
+  @@index([status, criadoEm])
+  @@map("notificacoes")
+}
+
+enum TipoNotificacao {
+  LEMBRETE_5_DIAS
+  LEMBRETE_1_DIA
+  VENCIMENTO_HOJE
+  ATRASO
+}
+
+enum StatusNotificacao {
+  PENDENTE
+  ENVIADO
+  FALHOU
+}
