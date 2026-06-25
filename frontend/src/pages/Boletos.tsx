@@ -249,17 +249,19 @@ export default function Boletos() {
       {modal.boleto && (
         <Modal open={!!modal.view} onClose={() => setModal({ open: false })} title="Detalhes do boleto">
           <div className="space-y-3 text-sm">
-            {[
-              ["Tipo", <TipoBadge tipo={modal.boleto.tipo} />],
-              ["Status", <StatusBadge status={modal.boleto.status} />],
-              ["Descrição", modal.boleto.descricao ?? "—"],
-              ["Valor", fmt(modal.boleto.valor)],
-              ["Vencimento", fmtDate(modal.boleto.dataVencimento)],
-              modal.boleto.dataPagamento && ["Pago em", fmtDate(modal.boleto.dataPagamento)],
-              ["Cliente", modal.boleto.cliente?.nome ?? "—"],
-              ["Linha digitável", modal.boleto.linhaDigitavel ?? "—"],
-              ["Observações", modal.boleto.observacoes ?? "—"],
-            ].filter((x): x is [string, React.ReactNode] => Boolean(x)).map(([label, value]) => (
+            {(
+              [
+                ["Tipo", <TipoBadge tipo={modal.boleto.tipo} />],
+                ["Status", <StatusBadge status={modal.boleto.status} />],
+                ["Descrição", modal.boleto.descricao ?? "—"],
+                ["Valor", fmt(modal.boleto.valor)],
+                ["Vencimento", fmtDate(modal.boleto.dataVencimento)],
+                modal.boleto.dataPagamento ? ["Pago em", fmtDate(modal.boleto.dataPagamento)] : null,
+                ["Cliente", modal.boleto.cliente?.nome ?? "—"],
+                ["Linha digitável", modal.boleto.linhaDigitavel ?? "—"],
+                ["Observações", modal.boleto.observacoes ?? "—"],
+              ] as Array<[string, React.ReactNode] | null>
+            ).filter((x): x is [string, React.ReactNode] => x !== null).map(([label, value]) => (
               <div key={String(label)} className="flex gap-2">
                 <span className="w-32 shrink-0 text-gray-500">{label}</span>
                 <span className="text-gray-900 font-medium">{value}</span>
