@@ -259,7 +259,7 @@ export default function Boletos() {
               ["Cliente", modal.boleto.cliente?.nome ?? "—"],
               ["Linha digitável", modal.boleto.linhaDigitavel ?? "—"],
               ["Observações", modal.boleto.observacoes ?? "—"],
-            ].filter(Boolean).map(([label, value]) => (
+            ].filter((x): x is [string, React.ReactNode] => Boolean(x)).map(([label, value]) => (
               <div key={String(label)} className="flex gap-2">
                 <span className="w-32 shrink-0 text-gray-500">{label}</span>
                 <span className="text-gray-900 font-medium">{value}</span>
