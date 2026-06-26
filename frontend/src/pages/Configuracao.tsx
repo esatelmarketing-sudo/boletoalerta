@@ -97,7 +97,7 @@ export default function Configuracao() {
     setQrCode(null);
     try {
       const { data } = await api.post("/whatsapp/conectar");
-      const qr = data?.qrcode?.base64 ?? data?.base64 ?? data?.qr;
+      const qr = data?._base64 ?? data?.qrcode?.base64 ?? data?.base64 ?? data?.qr ?? data?.code;
       if (qr) {
         setQrCode(qr);
         iniciarPolling();

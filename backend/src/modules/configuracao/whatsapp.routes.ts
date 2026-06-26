@@ -28,7 +28,18 @@ router.post("/conectar", async (req, res) => {
       { headers: { apikey: config.evolutionApiKey } }
     );
 
-    res.json(data);
+    console.log("[whatsapp] connect response:", JSON.stringify(data));
+
+    // Normaliza o QR code para o frontend independente da versão da API
+    const base64 =
+      data?.qrcode?.base64 ??
+      data?.base64 ??
+      data?.qr ??
+      data?.code ??
+      data?.qrcode?.code ??
+      null;
+
+    res.json({ ...data, _base64: base64 });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
