@@ -15,31 +15,26 @@ router.post("/conectar", async (req, res) => {
   try {
     const config = await getConfig(req.empresa.empresaId);
 
-    // Cria a instância se não existir
-    await axios.post(
-      `${config.evolutionApiUrl}/instance/create`,
-      { instanceName: config.instanceName, qrcode: true },
-      { headers: { apikey: config.evolutionApiKey } }
-    ).catch(() => null); // ignora se já existir
+    let base64: string | null = null;
 
-    // Busca o QR code
-    const { data } = await axios.get(
-      `${config.evolutionApiUrl}/instance/connect/${config.instanceName}`,
-      { headers: { apikey: config.evolutionApiKey } }
-    );
+    // Tenta criar a instância — o QR vem na resposta da criação
+    try {
+      const { data: created } = await axios.post(
+        `${config.evolutionApiUrl}/instance/create`,
+        { instanceName: config.instanceName, qrcode: true },
+        { headers: { apikey: config.evolutionApiKey } }
+      );
+      base64 = created?.qrcode?.base64 ?? created?.base64 ?? null;
+    } catch {
+      // Instância já existe — busca QR pelo endpoint connect
+      const { data: connected } = await axios.get(
+        `${config.evolutionApiUrl}/instance/connect/${config.instanceName}`,
+        { headers: { apikey: config.evolutionApiKey } }
+      );
+      base64 = connected?.qrcode?.base64 ?? connected?.base64 ?? connected?.code ?? null;
+    }
 
-    console.log("[whatsapp] connect response:", JSON.stringify(data));
-
-    // Normaliza o QR code para o frontend independente da versão da API
-    const base64 =
-      data?.qrcode?.base64 ??
-      data?.base64 ??
-      data?.qr ??
-      data?.code ??
-      data?.qrcode?.code ??
-      null;
-
-    res.json({ ...data, _base64: base64 });
+    res.json({ base64 });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
