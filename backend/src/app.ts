@@ -5,6 +5,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import boletosRoutes from "./modules/boletos/boletos.routes";
 import clientesRoutes from "./modules/clientes/clientes.routes";
 import configuracaoRoutes from "./modules/configuracao/configuracao.routes";
+import whatsappRoutes from "./modules/configuracao/whatsapp.routes";
 import notificacoesRoutes from "./modules/notificacoes/notificacoes.routes";
 
 const app = express();
@@ -19,6 +20,7 @@ app.use("/auth", authRoutes);
 app.use("/boletos", authMiddleware, boletosRoutes);
 app.use("/clientes", authMiddleware, clientesRoutes);
 app.use("/configuracao", authMiddleware, configuracaoRoutes);
+app.use("/whatsapp", authMiddleware, whatsappRoutes);
 app.use("/notificacoes", authMiddleware, notificacoesRoutes);
 
 // Health check
