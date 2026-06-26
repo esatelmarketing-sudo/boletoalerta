@@ -15,25 +15,20 @@ router.post("/conectar", async (req, res) => {
   try {
     const config = await getConfig(req.empresa.empresaId);
 
-    let base64: string | null = null;
+    const headers = { apikey: config.evolutionApiKey };
+    const baseUrl = config.evolutionApiUrl;
 
-    // Tenta criar a instância — o QR vem na resposta da criação
-    try {
-      const { data: created } = await axios.post(
-        `${config.evolutionApiUrl}/instance/create`,
-        { instanceName: config.instanceName, qrcode: true },
-        { headers: { apikey: config.evolutionApiKey } }
-      );
-      base64 = created?.qrcode?.base64 ?? created?.base64 ?? null;
-    } catch {
-      // Instância já existe — busca QR pelo endpoint connect
-      const { data: connected } = await axios.get(
-        `${config.evolutionApiUrl}/instance/connect/${config.instanceName}`,
-        { headers: { apikey: config.evolutionApiKey } }
-      );
-      base64 = connected?.qrcode?.base64 ?? connected?.base64 ?? connected?.code ?? null;
-    }
+    // Remove instância antiga se existir (garante QR fresco)
+    await axios.delete(`${baseUrl}/instance/delete/${config.instanceName}`, { headers }).catch(() => null);
 
+    // Cria instância nova com QR code
+    const { data } = await axios.post(
+      `${baseUrl}/instance/create`,
+      { instanceName: config.instanceName, qrcode: true },
+      { headers }
+    );
+
+    const base64 = data?.qrcode?.base64 ?? data?.base64 ?? null;
     res.json({ base64 });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
