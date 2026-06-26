@@ -33,14 +33,26 @@ router.post("/conectar", async (req, res) => {
     const client = evoClient(config.evolutionApiKey);
     const base = config.evolutionApiUrl;
 
-    // Remove instância antiga se existir
-    await client.delete(`${base}/instance/delete/${config.instanceName}`).catch(() => null);
+    const name = config.instanceName;
 
-    // Cria instância nova com QR code
-    const { data } = await client.post(`${base}/instance/create`, {
-      instanceName: config.instanceName,
-      qrcode: true,
-    });
+    // Tenta logout e delete para limpar estado anterior
+    await client.delete(`${base}/instance/logout/${name}`).catch(() => null);
+    await client.delete(`${base}/instance/delete/${name}`).catch(() => null);
+
+    // Tenta criar instância nova
+    let data: any;
+    try {
+      const res2 = await client.post(`${base}/instance/create`, { instanceName: name, qrcode: true });
+      data = res2.data;
+    } catch (createErr: any) {
+      // Instância persistiu — busca QR pelo connect
+      if (createErr.response?.status === 400) {
+        const res2 = await client.get(`${base}/instance/connect/${name}`);
+        data = { qrcode: res2.data };
+      } else {
+        throw createErr;
+      }
+    }
 
     const base64 = data?.qrcode?.base64 ?? data?.base64 ?? null;
     res.json({ base64 });
